@@ -96,6 +96,54 @@ def csv_read_matrix(file_path: PathStrHandle, delim=',', comment_str="#"):
     return mat
 
 
+def read_coda_trajectory_file(file_path: PathStrHandle) -> PoseTrajectory3D:
+    """
+    parses trajectory file in CODa format (timestamp tx ty tz qw qx qy qz)
+    :param file_path: the trajectory file path (or file handle)
+    :return: trajectory.PoseTrajectory3D object
+    """
+    raw_mat = csv_read_matrix(file_path, delim=" ", comment_str="#")
+    error_msg = ("CODA trajectory files must have 8 entries per row "
+                 "and no trailing delimiter at the end of the rows (space)")
+    if not raw_mat or (len(raw_mat) > 0 and len(raw_mat[0]) != 8):
+        raise FileInterfaceException(error_msg)
+    try:
+        mat = np.array(raw_mat).astype(float)
+    except ValueError:
+        raise FileInterfaceException(error_msg)
+    stamps = mat[:, 0]  # n x 1
+    xyz = mat[:, 1:4]  # n x 3
+    quat = mat[:, 4:]  # n x 4
+    if not hasattr(file_path, 'read'):  # if not file handle
+        logger.debug("Loaded {} stamps and poses from: {}".format(
+            len(stamps), file_path))
+    return PoseTrajectory3D(xyz, quat, stamps)
+
+
+def write_coda_trajectory_file(file_path: PathStrHandle,
+                               traj: PoseTrajectory3D,
+                               confirm_overwrite: bool = False) -> None:
+    """
+    :param file_path: desired text file for trajectory (string or handle)
+    :param traj: trajectory.PoseTrajectory3D
+    :param confirm_overwrite: whether to require user interaction
+           to overwrite existing files
+    """
+    if confirm_overwrite and isinstance(file_path, (str, Path)):
+        if not user.check_and_confirm_overwrite(file_path):
+            return
+    if not isinstance(traj, PoseTrajectory3D):
+        raise FileInterfaceException(
+            "trajectory must be a PoseTrajectory3D object")
+    stamps = traj.timestamps
+    xyz = traj.positions_xyz
+    quat = traj.orientations_quat_wxyz
+    mat = np.column_stack((stamps, xyz, quat))
+    np.savetxt(file_path, mat, delimiter=" ", fmt=["%.6f"] + ["%.8f"] * 7)
+    if isinstance(file_path, str):
+        logger.info("Trajectory saved to: " + file_path)
+
+
 def read_tum_trajectory_file(file_path: PathStrHandle) -> PoseTrajectory3D:
     """
     parses trajectory file in TUM format (timestamp tx ty tz qx qy qz qw)
@@ -140,7 +188,7 @@ def write_tum_trajectory_file(file_path: PathStrHandle, traj: PoseTrajectory3D,
     # shift -1 column -> w in back column
     quat = np.roll(traj.orientations_quat_wxyz, -1, axis=1)
     mat = np.column_stack((stamps, xyz, quat))
-    np.savetxt(file_path, mat, delimiter=" ")
+    np.savetxt(file_path, mat, delimiter=" ", fmt="%.10f")
     if isinstance(file_path, str):
         logger.info("Trajectory saved to: " + file_path)
 

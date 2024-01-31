@@ -47,7 +47,15 @@ def load_trajectories(args):
     from evo.tools import file_interface
     trajectories = OrderedDict()
     ref_traj = None
-    if args.subcommand == "tum":
+    if args.subcommand == "coda":
+        for coda_file in args.traj_files:
+            if coda_file == args.ref:
+                continue
+            trajectories[coda_file] = file_interface.read_coda_trajectory_file(
+                coda_file)
+        if args.ref:
+            ref_traj = file_interface.read_coda_trajectory_file(args.ref)
+    elif args.subcommand == "tum":
         for traj_file in args.traj_files:
             if traj_file == args.ref:
                 continue
@@ -412,6 +420,16 @@ def run(args):
             plot_collection.serialize(args.serialize_plot,
                                       confirm_overwrite=not args.no_warnings)
 
+    if args.save_as_coda:
+        logger.info(SEP)
+        for name, traj in trajectories.items():
+            dest = to_filestem(name, args) + ".coda"
+            file_interface.write_coda_trajectory_file(
+                dest, traj, confirm_overwrite=not args.no_warnings)
+        if args.ref:
+            dest = to_filestem(args.ref, args) + ".coda"
+            file_interface.write_coda_trajectory_file(
+                dest, ref_traj, confirm_overwrite=not args.no_warnings)
     if args.save_as_tum:
         logger.info(SEP)
         for name, traj in trajectories.items():

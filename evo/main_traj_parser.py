@@ -88,6 +88,9 @@ def parser() -> argparse.ArgumentParser:
     output_opts.add_argument("--serialize_plot",
                              help="path to serialize plot (experimental)",
                              default=None)
+    output_opts.add_argument("--save_as_coda",
+                             help="save trajectories in CODa format (as *.coda)",
+                             action="store_true")
     output_opts.add_argument("--save_as_tum",
                              help="save trajectories in TUM format (as *.tum)",
                              action="store_true")
@@ -123,6 +126,14 @@ def parser() -> argparse.ArgumentParser:
                                           (basic_desc, lic))
     sub_parsers = main_parser.add_subparsers(dest="subcommand")
     sub_parsers.required = True
+
+    coda_parser = sub_parsers.add_parser(
+        "coda",
+        description="%s for CODa dataset - %s" % (basic_desc, lic),
+        parents=[shared_parser])
+    coda_parser.add_argument("traj_files",
+                             help="one or multiple trajectory files", nargs='+')
+
     kitti_parser = sub_parsers.add_parser(
         "kitti",
         description="%s for KITTI pose files - %s" % (basic_desc, lic),

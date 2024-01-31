@@ -41,7 +41,11 @@ def load_trajectories(
     traj_ref: typing.Union[PosePath3D, PoseTrajectory3D]
     traj_est: typing.Union[PosePath3D, PoseTrajectory3D]
 
-    if args.subcommand == "tum":
+    if args.subcommand == "coda":
+        traj_ref = file_interface.read_coda_trajectory_file(args.ref_file)
+        traj_est = file_interface.read_coda_trajectory_file(args.est_file)
+        ref_name, est_name = args.ref_file, args.est_file
+    elif args.subcommand == "tum":
         traj_ref = file_interface.read_tum_trajectory_file(args.ref_file)
         traj_est = file_interface.read_tum_trajectory_file(args.est_file)
         ref_name, est_name = args.ref_file, args.est_file
