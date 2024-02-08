@@ -156,7 +156,7 @@ def parser() -> argparse.ArgumentParser:
 
     # Add time-sync options to parser of trajectory formats.
     for trajectory_parser in {
-            bag_parser, bag2_parser, euroc_parser, tum_parser
+            bag_parser, bag2_parser, coda_parser, euroc_parser, tum_parser
     }:
         trajectory_parser.add_argument(
             "--t_max_diff", type=float, default=0.01,
