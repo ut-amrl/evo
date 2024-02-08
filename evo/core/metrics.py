@@ -276,6 +276,13 @@ class RPE(PE):
              if self.pairs_from_reference else traj_est.poses_se3), self.delta,
             self.delta_unit, self.rel_delta_tol, all_pairs=self.all_pairs)
 
+        # Filter out pairs with time difference > 1s
+        id_pairs = [
+            (i, j)
+            for i, j in id_pairs
+            if traj_ref.timestamps[j] - traj_ref.timestamps[i] < 1
+        ]
+
         # Store flat id list e.g. for plotting.
         self.delta_ids = [j for i, j in id_pairs]
 
