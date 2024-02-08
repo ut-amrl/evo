@@ -392,13 +392,26 @@ def traj(ax: Axes, plot_mode: PlotMode, traj: trajectory.PosePath3D,
                                    with a symbol.
     """
     x_idx, y_idx, z_idx = plot_mode_to_idx(plot_mode)
-    x = traj.positions_xyz[:, x_idx]
-    y = traj.positions_xyz[:, y_idx]
-    if plot_mode == PlotMode.xyz:
-        z = traj.positions_xyz[:, z_idx]
-        ax.plot(x, y, z, style, color=color, label=label, alpha=alpha)
-    else:
-        ax.plot(x, y, style, color=color, label=label, alpha=alpha)
+    
+    timestamp_diffs = np.diff(traj.timestamps)
+    gap_indices = np.where(timestamp_diffs > 1.0)[0]
+
+    segment_indices = np.concatenate(([0], gap_indices + 1, [len(traj.timestamps)]))
+
+    for i in range(len(segment_indices) - 1):
+        start_idx, end_idx = segment_indices[i], segment_indices[i + 1]
+
+        x = traj.positions_xyz[start_idx:end_idx, x_idx]
+        y = traj.positions_xyz[start_idx:end_idx, y_idx]
+
+        if plot_mode == PlotMode.xyz:
+            z = traj.positions_xyz[start_idx:end_idx, z_idx]
+            ax.plot(x, y, z, style, color=color, label=label if i == 0 else "", alpha=alpha)
+        else:
+            ax.plot(x, y, style, color=color, label=label if i == 0 else "", alpha=alpha)
+
+        label = None  # only label the first segment
+
     if SETTINGS.plot_xyz_realistic:
         set_aspect_equal(ax)
     if label and SETTINGS.plot_show_legend:
